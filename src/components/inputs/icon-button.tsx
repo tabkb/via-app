@@ -1,5 +1,31 @@
 import styled from 'styled-components';
 
+export const SimpleIconButton = styled.button`
+  appearance: none;
+  position: relative;
+  display: inline-block;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  line-height: initial;
+  font-size: initial;
+  padding: 0;
+  &:disabled {
+    cursor: not-allowed;
+    cursor: not-allowed;
+  }
+  svg {
+    color: ${(props) =>
+      props.disabled ? 'var(--bg_control)' : 'var(--border_color_icon);'};
+  }
+  &:hover {
+    svg {
+      color: ${(props) =>
+        props.disabled ? 'var(--bg_control)' : 'var(--color_accent)'};
+    }
+  }
+`;
+
 export const IconButton = styled.button`
   appearance: none;
   width: 40px;

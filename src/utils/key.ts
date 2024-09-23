@@ -8,6 +8,7 @@ import {
   VIADefinitionV2,
   getLightingDefinition,
   KeycodeType,
+  CustomKeycode,
 } from '@the-via/reader';
 
 export interface IKeycode {
@@ -470,14 +471,10 @@ function generateMacros(numMacros: number = 16): IKeycode[] {
     const newName = `M${idx}`;
     const newCode = `MACRO(${idx})`;
     const newTitle = `Macro ${idx}`;
-    res = [
-      ...res,
-      {name: newName, title: newTitle, code: newCode},
-    ];
+    res = [...res, {name: newName, title: newTitle, code: newCode}];
   }
   return res;
 }
-
 
 export function getKeycodes(numMacros = 16): IKeycodeMenu[] {
   return [
@@ -749,7 +746,7 @@ export function getKeycodes(numMacros = 16): IKeycodeMenu[] {
       id: 'macro',
       label: 'Macro',
       width: 'label',
-      keycodes: generateMacros(numMacros)
+      keycodes: generateMacros(numMacros),
     },
     buildLayerMenu(),
     {
@@ -1029,4 +1026,22 @@ export const getKeycodesForKeyboard = (
         return 1;
       }
     });
+};
+
+export const getNameForByte = (
+  byte: number,
+  basicKeyToByte: Record<string, number>,
+  byteToKey: Record<number, string>,
+  customKeycodes?: CustomKeycode[],
+) => {
+  const customIndex = getCustomKeycodeIndex(byte, basicKeyToByte);
+  if (customKeycodes?.[customIndex]) {
+    return customKeycodes[customIndex].name;
+  }
+  const keycode = getCodeForByte(byte, basicKeyToByte, byteToKey);
+  const basicKeycode = keycodesList.find(({code}) => code === keycode);
+  if (!basicKeycode) {
+    return '';
+  }
+  return basicKeycode.name;
 };

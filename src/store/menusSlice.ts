@@ -29,12 +29,14 @@ type MenusState = {
   customMenuDataMap: CustomMenuDataMap;
   commonMenusMap: CommonMenusMap;
   showKeyPainter: boolean;
+  selectedRowTitle: string | undefined;
 };
 
 const initialState: MenusState = {
   customMenuDataMap: {},
   commonMenusMap: {},
   showKeyPainter: false,
+  selectedRowTitle: undefined,
 };
 
 const menusSlice = createSlice({
@@ -61,6 +63,9 @@ const menusSlice = createSlice({
     updateCustomMenuData: (state, action: PayloadAction<CustomMenuDataMap>) => {
       state.customMenuDataMap = {...state.customMenuDataMap, ...action.payload};
     },
+    updateSelectedRowTitle: (state, action: PayloadAction<string>) => {
+      state.selectedRowTitle = action.payload;
+    }
   },
 });
 
@@ -68,6 +73,7 @@ export const {
   updateShowKeyPainter,
   updateSelectedCustomMenuData,
   updateCustomMenuData,
+  updateSelectedRowTitle,
 } = menusSlice.actions;
 
 export default menusSlice.reducer;
@@ -195,6 +201,9 @@ export const getSelectedCustomMenuData = createSelector(
   getSelectedDevicePath,
   (map, path) => path && map[path],
 );
+
+export const getSelectedRowTitle = (state: RootState) =>
+  state.menus.selectedRowTitle;
 
 export const getV3Menus = createSelector(
   getSelectedDefinition,

@@ -2,10 +2,12 @@ import {getBoundingBox, Result, VIAKey} from '@the-via/reader';
 import {useAppDispatch} from 'src/store/hooks';
 import {updateSelectedKey} from 'src/store/keymapSlice';
 import {
+  DisplayMode,
   KeycapSharedProps,
   KeyGroupProps,
   KeysKeys,
 } from 'src/types/keyboard-rendering';
+import {ActuationData, DKSData} from 'src/types/types';
 import {getByteToKey} from 'src/utils/key';
 import {getBasicKeyDict} from 'src/utils/key-to-byte/dictionary-store';
 import {
@@ -24,8 +26,11 @@ export function getKeycapSharedProps<T>(
   props: KeyGroupProps<T>,
   keysKeys: KeysKeys<T>,
   selectedKeyIndex: number | null,
+  selectedKeys: number[] | null,
   labels: any[],
   skipFontCheck: boolean,
+  selecteDksmap: DKSData[],
+  actuationMap: ActuationData[],
 ): KeycapSharedProps<T> {
   const {
     position,
@@ -51,13 +56,17 @@ export function getKeycapSharedProps<T>(
     onPointerDown: onPointerDown,
     onPointerOver: onPointerOver,
     keyState: props.pressedKeys ? props.pressedKeys[i] : -1,
-    disabled: !props.selectable,
+    disabled: !props.selectable && !props.multiSelect,
     selected: i === selectedKeyIndex,
+    multiSelected: selectedKeys !== null && selectedKeys.includes(i),
     idx: idx,
     label: labels[i],
     onClick: onClick,
     key: keysKeys.indices[i],
     skipFontCheck,
+    dksData: selecteDksmap[i],
+    actuation: actuationMap[i],
+    multiSelect: !!props.multiSelect,
   };
 }
 
@@ -140,6 +149,9 @@ export function getKeysKeys<T>(
         idx: i,
         onClick: (evt: any, idx: number) => {
           evt.stopPropagation();
+          if (props.multiSelect) {
+            return;
+          }
           dispatch(updateSelectedKey(idx));
         },
         onPointerDown: props.onKeycapPointerDown,

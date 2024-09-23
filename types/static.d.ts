@@ -57,3 +57,5 @@ declare global {
     };
   }
 }
+
+declare module '*.mjs'

@@ -52,6 +52,9 @@ const paintKeycapLabel = (
   canvas: HTMLCanvasElement,
   legendColor: string,
   label: any,
+  mode: DisplayMode,
+  actuation: any,
+  dks: any,
 ) => {
   const context = canvas.getContext('2d');
   if (context == null) {
@@ -83,6 +86,79 @@ const paintKeycapLabel = (
   context.clip();
 
   context.fillStyle = legendColor;
+
+  const modeActuation =
+    DisplayMode.ConfigureAP === mode ||
+    DisplayMode.ConfigureRT === mode ||
+    DisplayMode.ConfigureDKS === mode;
+
+  if (modeActuation) {
+    let fontSize = 10;
+    let fontHeight = 0.75 * fontSize;
+    let faceMidLeftY = canvasHeight / 2;
+
+    const left = 1;
+    const right = Math.min(canvasWidth - 1, 120);
+    const top = fontHeight + 2;
+    const bottom = canvasHeight - 3;
+
+    context.font = `${fontSize}px ${fontFamily}`;
+    context.textAlign = 'right';
+
+    const ap = !!actuation?.actuationPoint;
+    const rt = !!actuation?.rtSensitivity && !!actuation?.rt2ndSensitivity;
+
+    if (DisplayMode.ConfigureAP === mode) {
+      if (dks) {
+        context.fillText('DKS', right, bottom);
+      } else {
+        ap && context.fillText(String(actuation.actuationPoint), right, bottom);
+
+        rt && context.fillText('RT', right, top);
+      }
+    }
+
+    if (DisplayMode.ConfigureRT === mode) {
+      if (dks) {
+        context.fillText('DKS', right, bottom);
+      } else {
+        context.textAlign = 'left';
+        rt && context.fillText(String(actuation.rtSensitivity), left, bottom);
+
+        context.textAlign = 'right';
+        rt &&
+          context.fillText(String(actuation.rt2ndSensitivity), right, bottom);
+
+        ap && context.fillText('AP', right, top);
+      }
+    }
+
+    if (DisplayMode.ConfigureDKS === mode) {
+      if (dks) {
+        context.fillText('DKS', right, bottom);
+      } else {
+        const l: string[] = [];
+        ap && l.push('AP');
+        rt && l.push('RT');
+        (ap || rt) && context.fillText(l.join(','), right, top);
+      }
+    }
+
+    context.textAlign = 'start';
+    fontSize = 13 * label.size;
+    fontHeight = 0.75 * fontSize;
+    context.font = `bold ${fontSize}px ${fontFamily}`;
+    const centerLabel = label.label || label.key;
+    context.fillText(
+      centerLabel,
+      centerLabelMargin.x,
+      faceMidLeftY + 0.5 * fontHeight,
+    );
+    return (
+      context.measureText(centerLabel).width > canvasWidth - centerLabelMargin.x
+    );
+  }
+
   if (label === undefined) {
   } else if (label.topLabel && label.bottomLabel) {
     let fontSize = 16;
@@ -133,6 +209,9 @@ const paintKeycap = (
   textureHeight: number,
   legendColor: string,
   label: any,
+  mode: DisplayMode,
+  actuation: any,
+  dks: any,
 ) => {
   const [canvasWidth, canvasHeight] = [
     CSSVarObject.keyWidth,
@@ -162,7 +241,7 @@ const paintKeycap = (
     paintDebugLines(canvas);
   }
 
-  return paintKeycapLabel(canvas, legendColor, label);
+  return paintKeycapLabel(canvas, legendColor, label, mode, actuation, dks);
 };
 
 export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
@@ -171,6 +250,7 @@ export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
     scale,
     color,
     selected,
+    multiSelected,
     disabled,
     mode,
     rotation,
@@ -180,6 +260,9 @@ export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
     textureHeight,
     skipFontCheck,
     idx,
+    actuation,
+    dksData,
+    multiSelect,
   } = props;
   const macroData = label && getMacroData(label);
   const [overflowsTexture, setOverflowsTexture] = useState(false);
@@ -202,6 +285,9 @@ export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
         textureHeight,
         color.t,
         label,
+        mode,
+        actuation,
+        dksData,
       );
       setOverflowsTexture(!!doesOverflow);
     }
@@ -214,12 +300,18 @@ export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
     color && color.t,
     color && color.c,
     shouldRotate,
+    mode,
+    actuation,
+    dksData,
   ]);
   useEffect(redraw, [
     label && label.key,
     skipFontCheck,
     color && color.c,
     color && color.t,
+    mode,
+    actuation,
+    dksData,
   ]);
 
   useEffect(() => {
@@ -300,6 +392,7 @@ export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
     hover,
     idx,
     mode,
+    multiSelect,
   ]);
   return shouldRotate ? (
     <EncoderKey
@@ -372,6 +465,7 @@ export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
       >
         <GlowContainer
           $selected={selected}
+          $multiSelected={multiSelect && multiSelected}
           style={{
             animation: disabled
               ? 'initial' // This prevents the hover animation from firing when the keycap can't be interacted with
@@ -417,12 +511,17 @@ export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
   );
 }, shallowEqual);
 
-const GlowContainer = styled.div<{$selected: boolean}>`
+const GlowContainer = styled.div<{
+  $selected: boolean;
+  $multiSelected: boolean;
+}>`
   box-sizing: border-box;
   padding: 2px 6px 10px 6px;
   transition: transform 0.2s ease-out;
-  box-shadow: inset -1px -1px 0 rgb(0 0 0 / 20%),
-    inset 1px 1px 0 rgb(255 255 255 / 20%);
+  box-shadow: ${(p) =>
+    p.$multiSelected
+      ? 'inset -2px -2px 0 rgb(199 21 133 / 80%), inset 2px 2px 0 rgb(199 21 133 / 90%)'
+      : 'inset -1px -1px 0 rgb(0 0 0 / 20%), inset 1px 1px 0 rgb(255 255 255 / 20%)'};
   animation: ${(p) =>
     p.$selected ? '.75s infinite alternate select-glow' : 'initial'};
   &:hover {

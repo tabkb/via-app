@@ -12,24 +12,41 @@ import {THEMES} from './utils/themes';
 import * as Sentry from '@sentry/react';
 import {BrowserTracing} from '@sentry/tracing';
 
+import i18n from 'i18next';
+import {initReactI18next} from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import resourcesToBackend from 'i18next-resources-to-backend';
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .use(resourcesToBackend((lng: string) => import(`./locales/${lng}.json`)))
+  .init({
+    fallbackLng: 'en',
+    debug: false,
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+
 const {MODE} = import.meta.env;
 
-Sentry.init({
-  dsn: 'https://1083464e2a864de791972ab8c976849a@o4504817817747456.ingest.sentry.io/4504817834655749',
-  integrations: [new BrowserTracing()],
-  tracesSampleRate: 1.0,
-  normalizeDepth: 10,
-  environment: MODE,
-});
+// Sentry.init({
+//   dsn: 'https://1083464e2a864de791972ab8c976849a@o4504817817747456.ingest.sentry.io/4504817834655749',
+//   integrations: [new BrowserTracing()],
+//   tracesSampleRate: 1.0,
+//   normalizeDepth: 10,
+//   environment: MODE,
+// });
 
-const appInsights = new ApplicationInsights({
-  config: {
-    instrumentationKey: 'b3c046b8-137c-47f3-b28d-9049abfa9fe8',
-    /* ...Other Configuration Options... */
-  },
-});
-appInsights.loadAppInsights();
-appInsights.trackPageView(); // Manually call trackPageView to establish the current user/session/pageview
+// const appInsights = new ApplicationInsights({
+//   config: {
+//     instrumentationKey: 'b3c046b8-137c-47f3-b28d-9049abfa9fe8',
+//     /* ...Other Configuration Options... */
+//   },
+// });
+// appInsights.loadAppInsights();
+// appInsights.trackPageView(); // Manually call trackPageView to establish the current user/session/pageview
 const elem = document.getElementById('root');
 if (elem) {
   const root = createRoot(elem);

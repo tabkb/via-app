@@ -20,9 +20,21 @@ import {
 import {useAppDispatch, useAppSelector} from 'src/store/hooks';
 import {
   getSelectedConnectedDevice,
+  getSelectedDevicePath,
   getSelectedKeyboardAPI,
 } from 'src/store/devicesSlice';
 import {getExpressions, saveMacros} from 'src/store/macrosSlice';
+import {useTranslation} from 'react-i18next';
+import {
+  getActuationMap,
+  getActuationPoint,
+  getContinuousRT,
+  getDksmap,
+  getEnableAP,
+  getEnableRT,
+  saveConfigToDevice,
+} from 'src/store/actuationSlice';
+import { getSelectedTabkbConfig } from 'src/store/tabkbConfigSlice';
 
 type ViaSaveFile = {
   name: string;
@@ -30,6 +42,15 @@ type ViaSaveFile = {
   layers: string[][];
   macros?: string[];
   encoders?: [string, string][][];
+  actuation?: {
+    apEnabled: boolean;
+    apGlobal: number;
+    rtEnabled: boolean;
+    rtContinuous: boolean;
+    ap: number[][];
+    rt: number[][];
+    dks: number[][];
+  };
 };
 
 const isViaSaveFile = (obj: any): obj is ViaSaveFile =>
@@ -48,6 +69,7 @@ const Container = styled.div`
 `;
 
 export const Pane: FC = () => {
+  const {t} = useTranslation();
   const dispatch = useAppDispatch();
   const selectedDefinition = useAppSelector(getSelectedDefinition);
   const selectedDevice = useAppSelector(getSelectedConnectedDevice);
@@ -56,9 +78,17 @@ export const Pane: FC = () => {
   const macros = useAppSelector((state) => state.macros);
   const expressions = useAppSelector(getExpressions);
   const {basicKeyToByte, byteToKey} = useAppSelector(getBasicKeyToByte);
+  const path = useAppSelector(getSelectedDevicePath);
+  const actuationSupported = useAppSelector(getSelectedTabkbConfig)?.screen;
+  const act = useAppSelector(getActuationMap);
+  const dks = useAppSelector(getDksmap);
+  const apEnabled = useAppSelector(getEnableAP);
+  const apGlobal = useAppSelector(getActuationPoint);
+  const rtEnabled = useAppSelector(getEnableRT);
+  const rtContinuous = useAppSelector(getContinuousRT);
 
   // TODO: improve typing so we can remove this
-  if (!selectedDefinition || !selectedDevice || !api) {
+  if (!selectedDefinition || !selectedDevice || !api || !path) {
     return null;
   }
 
@@ -131,6 +161,56 @@ export const Pane: FC = () => {
         encoders: encoderValues,
       };
 
+      if (actuationSupported) {
+        saveFile.actuation = {
+          apEnabled,
+          apGlobal,
+          rtEnabled,
+          rtContinuous,
+          ap: act[path]
+            ? (act[path]
+                .map((a, keyIdx) =>
+                  a.actuationPoint ? [keyIdx, a.actuationPoint] : null,
+                )
+                .filter((v) => v !== null) as number[][])
+            : [],
+          rt: act[path]
+            ? (act[path]
+                .map((a, keyIdx) =>
+                  a.rtSensitivity && a.rt2ndSensitivity
+                    ? [keyIdx, a.rtSensitivity, a.rt2ndSensitivity]
+                    : null,
+                )
+                .filter((v) => v !== null) as number[][])
+            : [],
+          dks: dks[path]
+            ? (dks[path]
+                .flatMap((layer, layerIdx) => {
+                  if (layer === null) {
+                    return null;
+                  }
+                  return layer
+                    .map((d, keyIdx) => {
+                      if (d === null) {
+                        return null;
+                      }
+                      return [
+                        layerIdx,
+                        keyIdx,
+                        d.actuation,
+                        ...d.actions.flatMap((a) => [
+                          a.key,
+                          ...a.points.map((p) => p),
+                        ]),
+                      ];
+                    })
+                    .filter((v) => v !== null);
+                })
+                .filter((v) => v !== null) as number[][])
+            : [],
+        };
+      }
+
       const content = stringify(saveFile);
       const blob = new Blob([content], {type: 'application/json'});
       const writable = await handle.createWritable();
@@ -157,19 +237,21 @@ export const Pane: FC = () => {
     setSuccessMessage(null);
     const reader = new FileReader();
 
-    reader.onabort = () => setErrorMessage('File reading was cancelled.');
-    reader.onerror = () => setErrorMessage('Failed to read file.');
+    reader.onabort = () => setErrorMessage(t('File reading was cancelled.'));
+    reader.onerror = () => setErrorMessage(t('Failed to read file.'));
 
     reader.onload = async () => {
       const saveFile = JSON.parse((reader as any).result.toString());
       if (!isViaSaveFile(saveFile)) {
-        setErrorMessage('Could not load file: invalid data.');
+        setErrorMessage(t('Could not load file: invalid data.'));
         return;
       }
 
       if (saveFile.vendorProductId !== selectedDefinition.vendorProductId) {
         setErrorMessage(
-          `Could not import layout. This file was created for a different keyboard: ${saveFile.name}`,
+          `${t(
+            'Could not import layout. This file was created for a different keyboard',
+          )}: ${saveFile.name}`,
         );
         return;
       }
@@ -180,7 +262,9 @@ export const Pane: FC = () => {
         ) > -1
       ) {
         setErrorMessage(
-          'Could not import layout: incorrect number of keys in one or more layers.',
+          t(
+            'Could not import layout: incorrect number of keys in one or more layers.',
+          ),
         );
         return;
       }
@@ -188,12 +272,16 @@ export const Pane: FC = () => {
       if (macros.isFeatureSupported && saveFile.macros) {
         if (saveFile.macros.length !== expressions.length) {
           setErrorMessage(
-            'Could not import layout: incorrect number of macros.',
+            t('Could not import layout: incorrect number of macros.'),
           );
           return;
         }
 
         dispatch(saveMacros(selectedDevice, saveFile.macros));
+      }
+
+      if (actuationSupported && saveFile.actuation) {
+        await dispatch(saveConfigToDevice(saveFile.actuation));
       }
 
       const keymap: number[][] = saveFile.layers.map((layer) =>
@@ -236,7 +324,7 @@ export const Pane: FC = () => {
         );
       }
 
-      setSuccessMessage('Successfully updated layout!');
+      setSuccessMessage(t('Successfully updated layout!'));
     };
 
     reader.readAsBinaryString(file);
@@ -247,15 +335,17 @@ export const Pane: FC = () => {
       <SaveLoadPane>
         <Container>
           <ControlRow>
-            <Label>Save Current Layout</Label>
+            <Label>{t('Save Current Layout')}</Label>
             <Detail>
-              <AccentButton onClick={saveLayout}>Save</AccentButton>
+              <AccentButton onClick={saveLayout}>{t('Save')}</AccentButton>
             </Detail>
           </ControlRow>
           <ControlRow>
-            <Label>Load Saved Layout</Label>
+            <Label>{t('Load Saved Layout')}</Label>
             <Detail>
-              <AccentUploadButton onLoad={loadLayout}>Load</AccentUploadButton>
+              <AccentUploadButton onLoad={loadLayout}>
+                {t('Load')}
+              </AccentUploadButton>
             </Detail>
           </ControlRow>
           {errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}

@@ -1,3 +1,4 @@
+import {useRetry} from 'src/utils/use-retry';
 import type {
   AuthorizedDevice,
   ConnectedDevice,
@@ -172,7 +173,30 @@ const ExtendedHID = {
     async write(arr: number[]) {
       await this.openPromise;
       const data = new Uint8Array(arr.slice(1));
-      await this._hidDevice?._device.sendReport(0, data);
+      this._hidDevice?._device.sendReport(0, data);
+    }
+
+    async send(arr: number[]): Promise<Uint8Array> {
+      await this.openPromise;
+      const data = new Uint8Array(arr.slice(1));
+      const time = Date.now();
+
+      const sendReport = async () => {
+        await this._hidDevice?._device.sendReport(0, data);
+      };
+
+      const sendRetry = useRetry(sendReport, {retries: 3, delay: 0});
+
+      await sendRetry();
+
+      return new Promise((res) => {
+        this.fastForwardGlobalBuffer(time);
+        if (globalBuffer[this.path].length > 0) {
+          res(globalBuffer[this.path].shift()?.message as any);
+        } else {
+          eventWaitBuffer[this.path].push((data) => res(data));
+        }
+      });
     }
   },
 };

@@ -13,9 +13,10 @@ import {
   updateSelectedKey,
   getConfigureKeyboardIsSelectable,
   clearSelectedKey,
+  updateSelectedKeys,
 } from 'src/store/keymapSlice';
 import React from 'react';
-import {shallowEqual} from 'react-redux';
+import {shallowEqual, useDispatch} from 'react-redux';
 import {DefinitionVersionMap, KeyColorType} from '@the-via/reader';
 import {
   getDesignDefinitionVersion,
@@ -181,6 +182,7 @@ const KeyboardGroupContainer = styled.div`
   left: 0;
 `;
 const KeyboardGroup = React.memo((props: any) => {
+  const dispatch = useDispatch();
   const {loadProgress, configureKeyboardIsSelectable, containerDimensions} =
     props;
   const [path] = useLocation();
@@ -222,7 +224,14 @@ const KeyboardGroup = React.memo((props: any) => {
     }
   }, [routeX]);
   return (
-    <KeyboardGroupContainer ref={ref}>
+    <KeyboardGroupContainer
+      onClick={(evt: any) => {
+        if (evt.target?.parentNode === ref.current) {
+          dispatch(updateSelectedKeys([]));
+        }
+      }}
+      ref={ref}
+    >
       <Keyboards
         configureKeyboardIsSelectable={configureKeyboardIsSelectable}
         loadProgress={loadProgress}

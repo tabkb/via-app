@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import { useTranslation } from 'react-i18next';
 import {useDispatch} from 'react-redux';
 import {useAppSelector} from 'src/store/hooks';
 import {
@@ -42,6 +43,7 @@ const LayerButton = styled.button<{$selected?: boolean}>`
 `;
 
 export const LayerControl = () => {
+  const {t} = useTranslation();
   const dispatch = useDispatch();
   const numberOfLayers = useAppSelector(getNumberOfLayers);
   const selectedLayerIndex = useAppSelector(getSelectedLayerIndex);
@@ -65,7 +67,7 @@ export const LayerControl = () => {
 
   return (
     <Container>
-      <Label>Layer</Label>
+      <Label>{t('Layer')}</Label>
       {Layers}
     </Container>
   );

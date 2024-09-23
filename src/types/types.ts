@@ -54,6 +54,7 @@ export type AuthorizedDevice = DeviceInfo & {
   protocol: number;
   requiredDefinitionVersion: DefinitionVersion;
   hasResolvedDefinition: false;
+  firmware: number;
 };
 
 export type ConnectedDevice = DeviceInfo & {
@@ -62,6 +63,7 @@ export type ConnectedDevice = DeviceInfo & {
   protocol: number;
   requiredDefinitionVersion: DefinitionVersion;
   hasResolvedDefinition: true;
+  firmware: number;
 };
 
 export type AuthorizedDevices = Record<string, AuthorizedDevice>;
@@ -113,3 +115,91 @@ export type DefinitionIndex = Pick<
 };
 
 export type EncoderBehavior = [number, number, number];
+
+export enum DKSPoint {
+  Hold = 0,
+  Down = 1,
+  Up = 2,
+  Single = 3,
+}
+
+export type DKSKey = number;
+
+export type DKSAction = {
+  key: DKSKey;
+  points: [DKSPoint, DKSPoint, DKSPoint, DKSPoint];
+};
+
+export type DKSActions = [DKSAction, DKSAction, DKSAction, DKSAction];
+
+export type DKSPointLength = [number, number, number, number];
+
+export type DKSData = {
+  actuation: number;
+  actions: DKSActions;
+} | null;
+
+export type DksMap = {[devicePath: string]: DKSData[][]};
+
+export type ActuationMenu = 'AP' | 'RT' | 'DKS' | 'SELF CHECK';
+
+export type ActuationData = {
+  actuationPoint?: number;
+  rtSensitivity?: number;
+  rt2ndSensitivity?: number;
+};
+
+export type ScreenTool = 'image' | 'video' | 'slider';
+
+export type ScreenFileType = {
+  label: string;
+  type: 'video' | 'image';
+  format: 'ASTS' | 'ABKG' | 'ANIM' | 'ANIT';
+  orientations: number;
+  owidth: number;
+  oheight: number;
+  animFramesLimit: number;
+};
+
+export type ScreenConfig = {
+  menus: ScreenTool[];
+  fileTypes: ScreenFileType[];
+  swapBit: boolean;
+};
+
+export type MatrixLightingConfig = {
+  cols: number;
+  rows: number;
+  cdc: boolean;
+  importEnable: boolean;
+  maxFrame: number;
+};
+
+export type TabkbConfig = {
+  vendorId: string;
+  productId: string;
+  cdc: boolean;
+  firmware: string;
+  firmwareFile: string;
+  screen: ScreenConfig;
+  actuation: boolean;
+  matrixLighting: MatrixLightingConfig;
+};
+
+export interface TabFileAPI {
+  setTabFile: (
+    data: number[],
+    onProgress?: (sended: number) => void,
+    cancel?: () => boolean,
+  ) => void;
+}
+
+export interface MatrixLightingAPI {
+  setMatrixLighting: (
+    frames: number,
+    fps: number,
+    rows: number,
+    cols: number,
+    data: number[],
+  ) => Promise<void>;
+}

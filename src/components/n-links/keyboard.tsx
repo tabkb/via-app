@@ -10,6 +10,7 @@ import {
 } from 'src/store/definitionsSlice';
 import type {VIADefinitionV2, VIADefinitionV3} from '@the-via/reader';
 import {
+  getMultiSelectAble,
   getSelectedKeymap,
   getSelectedPaletteColor,
   setLayer,
@@ -37,10 +38,13 @@ import {useMatrixTest} from 'src/utils/use-matrix-test';
 import {TestContext} from '../panes/test';
 import {TestKeyState} from 'src/types/types';
 import {useColorPainter} from 'src/utils/use-color-painter';
-import {getShowKeyPainter} from 'src/store/menusSlice';
+import {getSelectedRowTitle, getShowKeyPainter} from 'src/store/menusSlice';
 import {TestKeyboardSounds} from 'src/components/void/test-keyboard-sounds';
 import {DisplayMode, NDimension} from 'src/types/keyboard-rendering';
 import {getKeyboardRowPartitions} from 'src/utils/keyboard-rendering';
+import {Title as ActuationTitle} from '../panes/configure-panes/actuation';
+import {useMultiSelect} from 'src/utils/use-multi-select';
+import {getActiveMenu} from 'src/store/actuationSlice';
 
 const getKeyboardCanvas = (dimension: '2D' | '3D') =>
   dimension === '2D' ? StringKeyboardCanvas : FiberKeyboardCanvas;
@@ -74,6 +78,22 @@ export const ConfigureKeyboard = (props: {
       : [null, null];
   }, [keys, keyColors]);
 
+  const selectedTitle = useAppSelector(getSelectedRowTitle);
+
+  const {onMultiPointerDown, onMultiPointerOver} = useMultiSelect();
+
+  const multiSelect = useAppSelector(getMultiSelectAble);
+
+  const actuationMenu = useAppSelector(getActiveMenu);
+  let actuationMode = DisplayMode.Configure;
+  if (actuationMenu === 'DKS') {
+    actuationMode = DisplayMode.ConfigureDKS;
+  } else if (actuationMenu === 'RT') {
+    actuationMode = DisplayMode.ConfigureRT;
+  } else if (actuationMenu === 'AP') {
+    actuationMode = DisplayMode.ConfigureAP;
+  }
+
   if (!definition || !dimensions) {
     return null;
   }
@@ -81,15 +101,29 @@ export const ConfigureKeyboard = (props: {
   const KeyboardCanvas = getKeyboardCanvas(props.nDimension);
   return (
     <>
-      <KeyboardCanvas
-        matrixKeycodes={matrixKeycodes}
-        keys={keys}
-        selectable={!!selectable}
-        definition={definition}
-        containerDimensions={dimensions}
-        mode={DisplayMode.Configure}
-        shouldHide={showKeyPainter}
-      />
+      {selectedTitle === ActuationTitle ? (
+        <KeyboardCanvas
+          matrixKeycodes={matrixKeycodes}
+          keys={keys}
+          selectable={!multiSelect && !!selectable}
+          multiSelect={multiSelect}
+          definition={definition}
+          containerDimensions={dimensions}
+          mode={actuationMode}
+          onKeycapPointerDown={multiSelect ? onMultiPointerDown : undefined}
+          onKeycapPointerOver={multiSelect ? onMultiPointerOver : undefined}
+        />
+      ) : (
+        <KeyboardCanvas
+          matrixKeycodes={matrixKeycodes}
+          keys={keys}
+          selectable={!!selectable}
+          definition={definition}
+          containerDimensions={dimensions}
+          mode={DisplayMode.Configure}
+          shouldHide={showKeyPainter}
+        />
+      )}
       {normalizedKeys &&
       normalizedKeys.length &&
       normalizedColors &&

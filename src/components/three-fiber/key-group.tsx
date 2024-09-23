@@ -2,7 +2,7 @@ import {useGLTF} from '@react-three/drei';
 import {useMemo} from 'react';
 import {getBasicKeyToByte} from 'src/store/definitionsSlice';
 import {useAppDispatch, useAppSelector} from 'src/store/hooks';
-import {getSelectedKey} from 'src/store/keymapSlice';
+import {getSelectedKey, getSelectedKeys} from 'src/store/keymapSlice';
 import {Keycap} from './unit-key/keycap';
 import {
   calculateKeyboardFrameDimensions,
@@ -22,6 +22,8 @@ import {
 } from '../n-links/key-group';
 import {KeyGroupProps, KeysKeys} from 'src/types/keyboard-rendering';
 import {useSkipFontCheck} from 'src/utils/use-skip-font-check';
+import {getSelectedDksmap} from 'src/store/actuationSlice';
+import {getSelectedActuationMap} from 'src/store/actuationSlice';
 
 const getSRGBArray = (keyColors: number[][]) => {
   return keyColors.map(([hue, sat]) => {
@@ -47,6 +49,7 @@ export const KeyGroup: React.FC<KeyGroupProps<ThreeEvent<MouseEvent>>> = (
   const dispatch = useAppDispatch();
   const keycapScene = useGLTF(glbSrc, true).scene;
   const selectedKey = useAppSelector(getSelectedKey);
+  const selectedKeys = useAppSelector(getSelectedKeys);
   const selectedSRGBTheme = useAppSelector(getSelectedSRGBTheme);
   const macroExpressions = useAppSelector(getExpressions);
   const skipFontCheck = useSkipFontCheck();
@@ -66,6 +69,8 @@ export const KeyGroup: React.FC<KeyGroupProps<ThreeEvent<MouseEvent>>> = (
     props.onKeycapPointerDown,
     props.onKeycapPointerOver,
   ]);
+  const selecteDksmap = useAppSelector(getSelectedDksmap) || [];
+  const actuationMap = useAppSelector(getSelectedActuationMap) || [];
   const labels = useMemo(() => {
     return getLabels(props, macroExpressions, basicKeyToByte, byteToKey);
   }, [keys, props.matrixKeycodes, macros, props.definition]);
@@ -87,8 +92,11 @@ export const KeyGroup: React.FC<KeyGroupProps<ThreeEvent<MouseEvent>>> = (
             props,
             keysKeys,
             selectedKeyIndex,
+            selectedKeys,
             labels,
             skipFontCheck,
+            selecteDksmap,
+            actuationMap,
           )}
         />
       );
@@ -96,12 +104,17 @@ export const KeyGroup: React.FC<KeyGroupProps<ThreeEvent<MouseEvent>>> = (
   }, [
     keys,
     selectedKeyIndex,
+    selectedKeys,
     labels,
     props.pressedKeys,
     props.selectable,
     keyColorPalette,
     props.definition.vendorProductId,
     skipFontCheck,
+    props.mode,
+    selecteDksmap,
+    actuationMap,
+    props.multiSelect,
   ]);
   return (
     <group

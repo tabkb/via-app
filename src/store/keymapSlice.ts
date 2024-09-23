@@ -24,8 +24,11 @@ type KeymapState = {
   numberOfLayers: number;
   selectedLayerIndex: number;
   selectedKey: number | null;
+  selectedKeys: number[] | null;
   configureKeyboardIsSelectable: boolean;
   selectedPaletteColor: [number, number];
+  multiSelectAble: boolean;
+  showLabelControl: boolean;
 };
 
 const initialState: KeymapState = {
@@ -33,8 +36,11 @@ const initialState: KeymapState = {
   numberOfLayers: 4,
   selectedLayerIndex: 0,
   selectedKey: null,
+  selectedKeys: null,
   configureKeyboardIsSelectable: false,
   selectedPaletteColor: [0, 0],
+  multiSelectAble: false,
+  showLabelControl: true,
 };
 
 const keymapSlice = createSlice({
@@ -86,6 +92,35 @@ const keymapSlice = createSlice({
     updateSelectedKey: (state, action: PayloadAction<number | null>) => {
       state.selectedKey = action.payload;
     },
+    clearSelectedKeys: (state) => {
+      state.selectedKeys = null;
+    },
+    toggleSelectedKey: (state, action: PayloadAction<number>) => {
+      state.selectedKeys = state.selectedKeys || [];
+      if (state.selectedKeys.includes(action.payload)) {
+        state.selectedKeys = state.selectedKeys.filter(
+          (v) => v !== action.payload,
+        );
+      } else {
+        state.selectedKeys = [...state.selectedKeys, action.payload];
+      }
+    },
+    updateSelectedKeys: (state, action: PayloadAction<number[]>) => {
+      state.selectedKeys = [...action.payload];
+    },
+    addSelectedKey: (state, action: PayloadAction<number>) => {
+      state.selectedKeys = state.selectedKeys || [];
+      if (state.selectedKeys.includes(action.payload)) {
+        return;
+      }
+      state.selectedKeys = [...state.selectedKeys, action.payload];
+    },
+    removeSelectedKey: (state, action: PayloadAction<number>) => {
+      state.selectedKeys = state.selectedKeys || [];
+      state.selectedKeys = state.selectedKeys.filter(
+        (v) => v !== action.payload,
+      );
+    },
     saveKeymapSuccess: (
       state,
       action: PayloadAction<{layers: Layer[]; devicePath: string}>,
@@ -107,10 +142,18 @@ const keymapSlice = createSlice({
       state.rawDeviceMap[devicePath][selectedLayerIndex].keymap[keymapIndex] =
         value;
     },
+    updateMultiSelectAble: (state, action: PayloadAction<boolean>) => {
+      state.multiSelectAble = action.payload;
+    },
+    updateShowLayerControl: (state, action: PayloadAction<boolean>) => {
+      state.showLabelControl = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(selectDevice, (state) => {
       state.selectedKey = null;
+      state.selectedKeys = [];
+      state.multiSelectAble = false;
     });
   },
 });
@@ -125,6 +168,13 @@ export const {
   saveKeymapSuccess,
   setConfigureKeyboardIsSelectable,
   setSelectedPaletteColor,
+  toggleSelectedKey,
+  clearSelectedKeys,
+  addSelectedKey,
+  removeSelectedKey,
+  updateSelectedKeys,
+  updateMultiSelectAble,
+  updateShowLayerControl,
 } = keymapSlice.actions;
 
 export default keymapSlice.reducer;
@@ -215,6 +265,11 @@ export const getSelectedPaletteColor = createSelector(
     return [(360 * hue) / 255, sat / 255] as [number, number];
   },
 );
+export const getSelectedKeys = (state: RootState) => state.keymap.selectedKeys;
+export const getMultiSelectAble = (state: RootState) =>
+  state.keymap.multiSelectAble;
+export const getShowLayerControl = (state: RootState) =>
+  state.keymap.showLabelControl;
 
 export const getSelectedRawLayers = createSelector(
   getRawDeviceMap,
@@ -257,4 +312,18 @@ export const getSelectedKeymap = createSelector(
   getSelectedKeymaps,
   getSelectedLayerIndex,
   (deviceLayers, layerIndex) => deviceLayers && deviceLayers[layerIndex],
+);
+
+export const getSelectedKeymapIndexes = createSelector(
+  getSelectedKeyDefinitions,
+  getSelectedDefinition,
+  (keys, definition) => {
+    if (keys && definition) {
+      const {
+        matrix: {cols},
+      } = definition;
+      return keys.map(({row, col}) => row * cols + col);
+    }
+    return [];
+  },
 );

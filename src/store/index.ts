@@ -8,6 +8,11 @@ import lightingReducer from './lightingSlice';
 import menusReducer from './menusSlice';
 import designReducer from './designSlice';
 import errorsReducer from './errorsSlice';
+import matrixlightingReducer from './matrixLightingSlice';
+import actuationReducer from './actuationSlice';
+import screenReducer from './screenSlice';
+import tabkbconfigReducer from './tabkbConfigSlice';
+import firmwareReducer from './firmware';
 import * as Sentry from '@sentry/react';
 import {errorsListenerMiddleware} from './errorsListener';
 
@@ -24,6 +29,11 @@ export const store = configureStore({
     menus: menusReducer,
     design: designReducer,
     errors: errorsReducer,
+    matrixlighting: matrixlightingReducer,
+    actuation: actuationReducer,
+    screen: screenReducer,
+    tabkbconfig: tabkbconfigReducer,
+    firmware: firmwareReducer,
   },
   enhancers: [sentryEnhancer],
   middleware: (getDefaultMiddleware) =>

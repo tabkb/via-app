@@ -20,6 +20,10 @@ import * as Macros from './configure-panes/macros';
 import * as SaveLoad from './configure-panes/save-load';
 import * as Layouts from './configure-panes/layouts';
 import * as RotaryEncoder from './configure-panes/custom/satisfaction75';
+import * as MatrixLighting from './configure-panes/matrix-lighting';
+import * as Actuation from './configure-panes/actuation';
+import * as Screen from './configure-panes/screen';
+import * as Firmware from './configure-panes/firmware';
 import {makeCustomMenus} from './configure-panes/custom/menu-generator';
 import {LayerControl} from './configure-panes/layer-control';
 import {Badge} from './configure-panes/badge';
@@ -30,17 +34,24 @@ import {
   clearSelectedKey,
   getLoadProgress,
   getNumberOfLayers,
+  getShowLayerControl,
   setConfigureKeyboardIsSelectable,
 } from 'src/store/keymapSlice';
 import {useDispatch} from 'react-redux';
 import {reloadConnectedDevices} from 'src/store/devicesThunks';
-import {getV3MenuComponents} from 'src/store/menusSlice';
+import {
+  getV3MenuComponents,
+  updateSelectedRowTitle,
+} from 'src/store/menusSlice';
 import {getIsMacroFeatureSupported} from 'src/store/macrosSlice';
 import {getConnectedDevices, getSupportedIds} from 'src/store/devicesSlice';
 import {isElectron} from 'src/utils/running-context';
 import {useAppDispatch} from 'src/store/hooks';
 import {MenuTooltip} from '../inputs/tooltip';
 import {getRenderMode, getSelectedTheme} from 'src/store/settingsSlice';
+import {useTranslation} from 'react-i18next';
+import {getSelectedTabkbConfig} from 'src/store/tabkbConfigSlice';
+import {TabkbConfig} from 'src/types/types';
 
 const MenuContainer = styled.div`
   padding: 15px 10px 20px 10px;
@@ -53,6 +64,10 @@ const Rows = [
   Lighting,
   SaveLoad,
   RotaryEncoder,
+  MatrixLighting,
+  Actuation,
+  Screen,
+  Firmware,
   ...makeCustomMenus([]),
 ];
 function getCustomPanes(customFeatures: CustomFeaturesV2[]) {
@@ -69,6 +84,7 @@ const getRowsForKeyboard = (): typeof Rows => {
   const v3Menus = useAppSelector(getV3MenuComponents);
   const selectedDefinition = useAppSelector(getSelectedDefinition);
   const numberOfLayers = useAppSelector(getNumberOfLayers);
+  const selectedTabConfig = useAppSelector(getSelectedTabkbConfig);
 
   if (!selectedDefinition) {
     return [];
@@ -83,10 +99,39 @@ const getRowsForKeyboard = (): typeof Rows => {
         SaveLoad,
       ]),
       ...v3Menus,
+      ...filterTabRows(selectedTabConfig, [
+        Actuation,
+        MatrixLighting,
+        Screen,
+        Firmware,
+      ]),
     ];
   } else {
     return [];
   }
+};
+
+const filterTabRows = (
+  config: TabkbConfig | undefined,
+  rows: typeof Rows,
+): typeof Rows => {
+  if (!config) {
+    return [];
+  }
+  let removeList: typeof Rows = [];
+  if (!config.screen) {
+    removeList = [...removeList, Screen];
+  }
+  if (!config.actuation) {
+    removeList = [...removeList, Actuation];
+  }
+  if (!config.matrixLighting) {
+    removeList = [...removeList, MatrixLighting];
+  }
+  if (!config.firmware) {
+    removeList = [...removeList, Firmware];
+  }
+  return rows.filter((row) => !removeList.includes(row)) as typeof Rows;
 };
 
 const filterInferredRows = (
@@ -145,6 +190,7 @@ const Loader: React.FC<{
   loadProgress: number;
   selectedDefinition: VIADefinitionV2 | VIADefinitionV3 | null;
 }> = (props) => {
+  const {t} = useTranslation();
   const {loadProgress, selectedDefinition} = props;
   const dispatch = useAppDispatch();
   const theme = useAppSelector(getSelectedTheme);
@@ -169,7 +215,7 @@ const Loader: React.FC<{
       {<ChippyLoader theme={theme} progress={loadProgress || null} />}
       {(showButton || noConnectedDevices) && !noSupportedIds && !isElectron ? (
         <AccentButtonLarge onClick={() => dispatch(reloadConnectedDevices())}>
-          Authorize device
+          {t('Authorize device')}
           <FontAwesomeIcon style={{marginLeft: '10px'}} icon={faPlus} />
         </AccentButtonLarge>
       ) : (
@@ -213,19 +259,23 @@ export const ConfigurePane = () => {
 };
 
 const ConfigureGrid = () => {
+  const {t} = useTranslation();
   const dispatch = useDispatch();
 
   const [selectedRow, setRow] = useState(0);
   const KeyboardRows = getRowsForKeyboard();
   const SelectedPane = KeyboardRows[selectedRow]?.Pane;
   const selectedTitle = KeyboardRows[selectedRow]?.Title;
+  const showLabelControl = useAppSelector(getShowLayerControl);
 
   useEffect(() => {
-    if (selectedTitle !== 'Keymap') {
-      dispatch(setConfigureKeyboardIsSelectable(false));
-    } else {
+    if (selectedTitle === 'Keymap') {
       dispatch(setConfigureKeyboardIsSelectable(true));
     }
+    dispatch(updateSelectedRowTitle(selectedTitle));
+    return () => {
+      dispatch(setConfigureKeyboardIsSelectable(false));
+    };
   }, [selectedTitle]);
 
   return (
@@ -244,7 +294,7 @@ const ConfigureGrid = () => {
         }}
       >
         <div style={{pointerEvents: 'all'}}>
-          <LayerControl />
+          {showLabelControl && <LayerControl />}
           <Badge />
         </div>
       </ConfigureFlexCell>
@@ -260,7 +310,7 @@ const ConfigureGrid = () => {
                 >
                   <IconContainer>
                     <Icon />
-                    <MenuTooltip>{Title}</MenuTooltip>
+                    <MenuTooltip>{t(Title)}</MenuTooltip>
                   </IconContainer>
                 </Row>
               ),

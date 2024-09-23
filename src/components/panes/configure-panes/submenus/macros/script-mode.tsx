@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {AccentButton} from '../../../../inputs/accent-button';
 import {getMacroValidator} from 'src/utils/macro-api';
 import {ControlRow, Label, Detail} from '../../../grid';
@@ -11,6 +11,7 @@ import {
 } from '../../../../../components/inputs/autocomplete-keycode';
 import {ErrorMessage} from '../../../../styled';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 
 const TextArea = styled.textarea`
   box-sizing: border-box;
@@ -81,6 +82,7 @@ export const ScriptMode: React.FC<{
   macroIndex,
   isDelaySupported,
 }) => {
+  const {t} = useTranslation();
   const trimmedMacro = macro.trimEnd();
   const [currentValue, setCurrentValue] = React.useState(trimmedMacro);
   const [errorMessage, setErrorMessage] = React.useState<string | undefined>(
@@ -177,22 +179,22 @@ export const ScriptMode: React.FC<{
         <DescriptionLabel>
           <ToastErrorMessage>{errorMessage}</ToastErrorMessage>
           <Message>
-            Enter text directly, or wrap{' '}
+            {t('Enter text directly, or wrap')}{' '}
             <Link href="https://docs.qmk.fm/#/keycodes_basic" target="_blank">
-              Basic Keycodes
+             {t('Basic Keycodes')} 
             </Link>{' '}
-            in {'{}'}
+            {t('in')} {'{}'}
           </Message>
-          <Message>Single tap: {'{KC_XXX}'}</Message>
-          <Message>Chord: {'{KC_XXX, KC_YYY, KC_ZZZ}'}</Message>
-          <Message>Keydown: {`{+KC_XXX}`}</Message>
-          <Message>Keyup: {`{-KC_XXX}`}</Message>
+          <Message>{t('Single tap')}: {'{KC_XXX}'}</Message>
+          <Message>{t('Chord')}: {'{KC_XXX, KC_YYY, KC_ZZZ}'}</Message>
+          <Message>{t('Keydown')}: {`{+KC_XXX}`}</Message>
+          <Message>{t('Keyup')}: {`{-KC_XXX}`}</Message>
           {isDelaySupported ? (
-            <Message>Delay (ms): {'{NNNN}'} </Message>
+            <Message>{t('Delay')} (ms): {'{NNNN}'} </Message>
           ) : (
             'Upgrade firmware to use delays'
           )}
-          <Message>Type ? to search for keycodes</Message>
+          <Message>{t('Type ? to search for keycodes')}</Message>
         </DescriptionLabel>
         <Detail>
           <AccentButton disabled={macro === currentValue} onClick={saveMacro}>

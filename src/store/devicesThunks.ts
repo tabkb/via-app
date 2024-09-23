@@ -14,6 +14,7 @@ import {
   updateDefinitions,
   getDefinitions,
   loadStoredCustomDefinitions,
+  loadTabkbIds,
 } from './definitionsSlice';
 import {loadKeymapFromDevice} from './keymapSlice';
 import {updateLightingData} from './lightingSlice';
@@ -40,6 +41,8 @@ import {createRetry} from 'src/utils/retry';
 import {extractDeviceInfo, logAppError} from './errorsSlice';
 import {tryForgetDevice} from 'src/shims/node-hid';
 import {isAuthorizedDeviceConnected} from 'src/utils/type-predicates';
+import {loadActuation} from './actuationSlice';
+import {loadMatrixLighintConfig} from './matrixLightingSlice';
 
 const selectConnectedDeviceRetry = createRetry(8, 100);
 
@@ -65,6 +68,9 @@ const selectConnectedDevice =
       // John you drongo, don't trust the compiler, dispatches are totes awaitable for async thunks
       await dispatch(loadMacros(connectedDevice));
       await dispatch(loadLayoutOptions());
+
+      await dispatch(loadMatrixLighintConfig());
+      await dispatch(loadActuation());
 
       const {protocol} = connectedDevice;
       try {
@@ -134,6 +140,12 @@ export const reloadConnectedDevices =
       ),
     );
 
+    const firmwareVersions = await Promise.all(
+      recognisedDevices.map((device) =>
+        new KeyboardAPI(device.path).getFirmwareVersion(),
+      ),
+    );
+
     const recognisedDevicesWithBadProtocol = recognisedDevices.filter(
       (_, i) => protocolVersions[i] === -1,
     );
@@ -156,11 +168,13 @@ export const reloadConnectedDevices =
       .map((device, idx) => {
         const {path, productId, vendorId, productName} = device;
         const protocol = protocolVersions[idx];
+        const firmware = firmwareVersions[idx];
         return {
           path,
           productId,
           vendorId,
           protocol,
+          firmware,
           productName,
           hasResolvedDefinition: false,
           requiredDefinitionVersion: protocol >= 11 ? 'v3' : 'v2',
@@ -208,13 +222,14 @@ export const reloadConnectedDevices =
       dispatch(selectConnectedDevice(firstConnectedDevice));
     } else if (validDevicesArr.length === 0) {
       dispatch(selectDevice(null));
-      dispatch(setForceAuthorize(true));
+      // dispatch(setForceAuthorize(true));
     }
   };
 
 export const loadSupportedIds = (): AppThunk => async (dispatch) => {
   await syncStore();
   dispatch(updateSupportedIds(getSupportedIdsFromStore()));
+  await dispatch(loadTabkbIds());
   // John you drongo, don't trust the compiler, dispatches are totes awaitable for async thunks
   await dispatch(updateDefinitions(getDefinitionsFromStore()));
   dispatch(loadStoredCustomDefinitions());

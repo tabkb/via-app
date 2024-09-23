@@ -197,6 +197,35 @@ export const getSelectedKeyDefinitions = createSelector(
   },
 );
 
+export const getLightingSupport = createSelector(
+  getSelectedDefinition,
+  (definition) => {
+    if (!definition) {
+      return false;
+    }
+    if (
+      'keycodes' in definition &&
+      typeof definition['keycodes'] === 'object'
+    ) {
+      if (
+        definition['keycodes'].find((s) => s.toLowerCase().includes('lighting'))
+      ) {
+        return true;
+      }
+    }
+    if ('menus' in definition && typeof definition['menus'] === 'object') {
+      if (
+        definition['menus'].find((m) =>
+          (m as any)?.label.toLowerCase().includes('lighting'),
+        )
+      ) {
+        return true;
+      }
+    }
+    return false;
+  },
+);
+
 export const updateLayoutOption =
   (index: number, val: number): AppThunk =>
   async (dispatch, getState) => {
@@ -261,6 +290,15 @@ export const storeCustomDefinitions =
       throw e;
     }
   };
+
+export const loadTabkbIds = (): AppThunk => async (dispatch, getState) => {
+  const response = await fetch('/tabkb/supported_kbs.json', {
+    cache: 'reload',
+  });
+  const supportedKbs: {v2: number[]; v3: number[]} = await response.json();
+  dispatch(ensureSupportedIds({productIds: supportedKbs.v2, version: 'v2'}));
+  dispatch(ensureSupportedIds({productIds: supportedKbs.v3, version: 'v3'}));
+};
 
 export const loadStoredCustomDefinitions =
   (): AppThunk => async (dispatch, getState) => {

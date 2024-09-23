@@ -134,6 +134,9 @@ const paintKeycapLabel = (
   rect: Rect,
   legendColor: string,
   label: any,
+  mode: DisplayMode,
+  actuation: any,
+  dks: any,
 ) => {
   const context = canvas.getContext('2d');
   if (context == null) {
@@ -156,6 +159,83 @@ const paintKeycapLabel = (
   context.clip();
 
   context.fillStyle = legendColor;
+
+  const modeActuation =
+    DisplayMode.ConfigureAP === mode ||
+    DisplayMode.ConfigureRT === mode ||
+    DisplayMode.ConfigureDKS === mode;
+
+  if (modeActuation) {
+    let fontSize = 30;
+    let fontHeightTU = (0.75 * fontSize) / canvas.height;
+    let faceMidLeftY = (rect.tr.y + rect.bl.y) / 2;
+
+    const left = rect.bl.x * canvas.width;
+    const right = rect.tr.x * canvas.width;
+    const top = (1 - (rect.tr.y - fontHeightTU - 0.01)) * canvas.height;
+    const bottom = (1 - (rect.bl.y + 0.015)) * canvas.height;
+
+    context.font = `${fontSize}px ${fontFamily}`;
+    context.textAlign = 'right';
+
+    const ap = !!actuation?.actuationPoint;
+    const rt = !!actuation?.rtSensitivity && !!actuation?.rt2ndSensitivity;
+
+    if (DisplayMode.ConfigureAP === mode) {
+      if (dks) {
+        context.fillText('DKS', right, bottom);
+      } else {
+        ap && context.fillText(String(actuation.actuationPoint), right, bottom);
+
+        rt && context.fillText('RT', right, top);
+      }
+    }
+
+    if (DisplayMode.ConfigureRT === mode) {
+      if (dks) {
+        context.fillText('DKS', right, bottom);
+      } else {
+        context.textAlign = 'left';
+        rt && context.fillText(String(actuation.rtSensitivity), left, bottom);
+
+        context.textAlign = 'right';
+        rt &&
+          context.fillText(String(actuation.rt2ndSensitivity), right, bottom);
+
+        ap && context.fillText('AP', right, top);
+      }
+    }
+
+    if (DisplayMode.ConfigureDKS === mode) {
+      if (dks) {
+        context.fillText('DKS', right, bottom);
+      } else {
+        const l: string[] = [];
+        ap && l.push('AP');
+        rt && l.push('RT');
+        (ap || rt) && context.fillText(l.join(','), right, top);
+      }
+    }
+
+    fontSize = 37.5 * label.size;
+    fontHeightTU = (0.75 * fontSize) / canvas.height;
+    context.textAlign = 'start';
+    context.font = `bold ${fontSize}px ${fontFamily}`;
+    const centerLabel = label.label || label.key;
+    context.fillText(
+      centerLabel,
+      (rect.bl.x + centerLabelMargin.x) * canvas.width,
+      (1 - (faceMidLeftY - 0.5 * fontHeightTU - centerLabelMargin.y)) *
+        canvas.height,
+    );
+    // return if label would have overflowed so that we know to show tooltip
+    return (
+      context.measureText(centerLabel).width >
+      (rect.tr.x - (rect.bl.x + centerLabelMargin.x)) * canvas.width
+    );
+  }
+
+  context.textAlign = 'left';
   if (label === undefined) {
   } else if (label.topLabel && label.bottomLabel) {
     let fontSize = 52;
@@ -270,6 +350,9 @@ const paintKeycap = (
   legendColor: string,
   label: any,
   textureOffsetX: number,
+  mode: DisplayMode,
+  actuation: any,
+  dks: any,
 ) => {
   const textureRects: TextureRects = calculateTextureRects(
     widthMultiplier,
@@ -300,7 +383,15 @@ const paintKeycap = (
     paintDebugLines(canvas, textureRects.keycapRect, textureRects.faceRect);
   }
 
-  return paintKeycapLabel(canvas, textureRects.faceRect, legendColor, label);
+  return paintKeycapLabel(
+    canvas,
+    textureRects.faceRect,
+    legendColor,
+    label,
+    mode,
+    actuation,
+    dks,
+  );
 };
 
 export const Keycap: React.FC<ThreeFiberKeycapProps> = React.memo((props) => {
@@ -310,6 +401,7 @@ export const Keycap: React.FC<ThreeFiberKeycapProps> = React.memo((props) => {
     color,
     onClick,
     selected,
+    multiSelected,
     disabled,
     mode,
     rotation,
@@ -322,6 +414,9 @@ export const Keycap: React.FC<ThreeFiberKeycapProps> = React.memo((props) => {
     onPointerOver,
     onPointerDown,
     idx,
+    actuation,
+    multiSelect,
+    dksData,
   } = props;
   const ref = useRef<any>();
   const macroData = label && getMacroData(label);
@@ -330,6 +425,7 @@ export const Keycap: React.FC<ThreeFiberKeycapProps> = React.memo((props) => {
   const [hovered, hover] = useState(false);
   const textureRef = useRef<THREE.CanvasTexture>();
   const canvasRef = useRef(document.createElement('canvas'));
+
   const redraw = React.useCallback(() => {
     if (canvasRef.current && color) {
       if (shouldRotate) {
@@ -344,6 +440,9 @@ export const Keycap: React.FC<ThreeFiberKeycapProps> = React.memo((props) => {
           color.t,
           label,
           textureOffsetX,
+          mode,
+          actuation,
+          dksData,
         );
         setOverflowsTexture(!!doesOverflow);
       }
@@ -358,8 +457,18 @@ export const Keycap: React.FC<ThreeFiberKeycapProps> = React.memo((props) => {
     color && color.t,
     color && color.c,
     shouldRotate,
+    mode,
+    actuation,
+    dksData,
   ]);
-  useEffect(redraw, [label && label.key, color && color.c, color && color.t]);
+  useEffect(redraw, [
+    label && label.key,
+    color && color.c,
+    color && color.t,
+    mode,
+    actuation,
+    dksData,
+  ]);
 
   const glow = useSpring({
     config: {duration: 800},
@@ -438,7 +547,16 @@ export const Keycap: React.FC<ThreeFiberKeycapProps> = React.memo((props) => {
               }
             },
           ];
-    }, [disabled, onClick, onPointerDown, onPointerOver, hover, idx, mode]);
+    }, [
+      disabled,
+      onClick,
+      onPointerDown,
+      onPointerOver,
+      hover,
+      idx,
+      mode,
+      multiSelect,
+    ]);
 
   const AniMeshMaterial = animated.meshPhongMaterial as any;
 
@@ -455,7 +573,16 @@ export const Keycap: React.FC<ThreeFiberKeycapProps> = React.memo((props) => {
         onPointerOut={meshOnPointerOut}
         geometry={keycapGeometry}
       >
-        <AniMeshMaterial attach="material" color={selected ? glow.y : b}>
+        <AniMeshMaterial
+          attach="material"
+          color={
+            selected
+              ? glow.y
+              : multiSelect && multiSelected
+              ? 'palevioletred'
+              : b
+          }
+        >
           <canvasTexture
             ref={textureRef as any}
             attach="map"

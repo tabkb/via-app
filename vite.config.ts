@@ -23,6 +23,14 @@ export default defineConfig({
   assetsInclude: ['**/*.glb'],
   envDir: '.',
   server: {open: true},
+  preview: {
+    port: 3000,
+    host: '0.0.0.0',
+    https: {
+      key: fs.readFileSync('../key.pem'),
+      cert: fs.readFileSync('../certificate.pem'),
+    },
+  },
   resolve: {
     alias: {
       src: path.resolve(__dirname, './src'),

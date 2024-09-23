@@ -10,6 +10,7 @@ import {
   logAppError,
   logKeyboardAPIError,
 } from 'src/store/errorsSlice';
+import {bytesIntoNum, numIntoBytes} from './bit-pack';
 
 // VIA Command IDs
 
@@ -44,6 +45,15 @@ enum APICommand {
   BACKLIGHT_CONFIG_SET_VALUE = 0x07,
   BACKLIGHT_CONFIG_GET_VALUE = 0x08,
   BACKLIGHT_CONFIG_SAVE = 0x09,
+
+  TAB_MATRIX_LIGHTING_SET_INFO = 0xc0,
+  TAB_MATRIX_LIGHTING_SET_BUFFER = 0xc1,
+
+  TAB_ACTUATION = 0xd0,
+
+  TAB_FILE_SET_INFO = 0xe0,
+  TAB_FILE_SET_BUFFER = 0xe1,
+  TAB_FILE_SET_CANCEL = 0xe2,
 }
 
 const APICommandValueToName = Object.entries(APICommand).reduce(
@@ -172,6 +182,19 @@ export class KeyboardAPI {
       return shiftTo16Bit([hi, lo]);
     } catch (e) {
       return -1;
+    }
+  }
+
+  async getFirmwareVersion() {
+    try {
+      const res = await this.getKeyboardValue(
+        KeyboardValue.FIRMWARE_VERSION,
+        [],
+        4,
+      );
+      return bytesIntoNum(res);
+    } catch (e) {
+      return 0;
     }
   }
 
@@ -564,6 +587,77 @@ export class KeyboardAPI {
     await this.hidCommand(APICommand.DYNAMIC_KEYMAP_MACRO_RESET);
   }
 
+  async setMatrixLighting(
+    frames: number,
+    fps: number,
+    rows: number,
+    cols: number,
+    data: number[],
+  ) {
+    const resp = await this.hidCommand(APICommand.TAB_MATRIX_LIGHTING_SET_INFO, [
+      frames,
+      fps,
+      rows,
+      cols,
+    ]);
+
+    if (resp && resp[5] === 0xee) {
+      const error = new Error('Error: ' + resp[5])
+      error.cause = resp[5]
+    }
+
+    const bufferSize = 26;
+    for (let offset = 0; offset < data.length; offset += bufferSize) {
+      const buffer = data.slice(offset, offset + bufferSize);
+      await this.hidCommand(APICommand.TAB_MATRIX_LIGHTING_SET_BUFFER, [
+        ...numIntoBytes(offset),
+        buffer.length,
+        ...buffer,
+      ]);
+    }
+  }
+
+  async setTabFile(
+    data: number[],
+    onProgress?: (sended: number) => void,
+    cancel?: () => boolean,
+  ) {
+    const resp = await this.hidCommand(
+      APICommand.TAB_FILE_SET_INFO,
+      data.slice(0, 20),
+    );
+
+    if (resp && resp[21] === 0xee) {
+      const error = new Error('Error: ' + resp[21])
+      error.cause = resp[21]
+      throw error
+    }
+
+    const bufferSize = 26;
+    for (let offset = 0; offset < data.length; offset += bufferSize) {
+      const buffer = data.slice(offset, offset + bufferSize);
+      await this.hidCommand(APICommand.TAB_FILE_SET_BUFFER, [
+        ...numIntoBytes(offset),
+        buffer.length,
+        ...buffer,
+      ]);
+      if (cancel && cancel()) {
+        await this.hidCommand(APICommand.TAB_FILE_SET_CANCEL);
+        return;
+      }
+      if (onProgress) {
+        onProgress(offset + buffer.length);
+      }
+    }
+  }
+
+  async actuationCommand(
+    command: number,
+    bytes: Array<number> = [],
+  ): Promise<number[]> {
+    return await this.hidCommand(APICommand.TAB_ACTUATION, [command, ...bytes]);
+  }
+
   get commandQueueWrapper() {
     if (!globalCommandQueue[this.kbAddr]) {
       globalCommandQueue[this.kbAddr] = {isFlushing: false, commandQueue: []};
@@ -649,11 +743,25 @@ export class KeyboardAPI {
       paddedArray[idx] = val;
     });
 
-    await this.getHID().write(paddedArray);
+    const resp = await this.getHID().send(paddedArray) as Uint8Array;
+    const buffer = Array.from(resp)
 
-    const buffer = Array.from(await this.getByteBuffer());
+    // const buffer = Array.from(await this.getByteBuffer());
     const bufferCommandBytes = buffer.slice(0, commandBytes.length - 1);
     logCommand(this.kbAddr, commandBytes, buffer);
+    if (
+      [APICommand.TAB_ACTUATION].includes(command) &&
+      eqArr([0xff], buffer.slice(0, 1)) &&
+      eqArr(commandBytes.slice(2), bufferCommandBytes.slice(1))
+    ) {
+      console.debug(
+        `Command for ${this.kbAddr}`,
+        commandBytes,
+        'Correct Resp:',
+        buffer,
+      );
+      return [];
+    }
     if (!eqArr(commandBytes.slice(1), bufferCommandBytes)) {
       console.error(
         `Command for ${this.kbAddr}:`,
@@ -675,12 +783,13 @@ export class KeyboardAPI {
 
       throw new Error('Receiving incorrect response for command');
     }
-    console.debug(
-      `Command for ${this.kbAddr}`,
-      commandBytes,
-      'Correct Resp:',
-      buffer,
-    );
+    if (command === APICommand.TAB_ACTUATION)
+      console.debug(
+        `Command for ${this.kbAddr}`,
+        commandBytes,
+        'Correct Resp:',
+        buffer,
+      );
     return buffer;
   }
 }

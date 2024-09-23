@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {getBasicKeyToByte} from 'src/store/definitionsSlice';
 import {useAppDispatch, useAppSelector} from 'src/store/hooks';
-import {getSelectedKey} from 'src/store/keymapSlice';
+import {getSelectedKey, getSelectedKeys} from 'src/store/keymapSlice';
 import {Keycap} from './unit-key/keycap';
 import {
   calculateKeyboardFrameDimensions,
@@ -21,6 +21,8 @@ import {KeyGroupProps, KeysKeys} from 'src/types/keyboard-rendering';
 import {getRGB} from 'src/utils/color-math';
 import {Color} from 'three';
 import {useSkipFontCheck} from 'src/utils/use-skip-font-check';
+import {getSelectedDksmap} from 'src/store/actuationSlice';
+import {getSelectedActuationMap} from 'src/store/actuationSlice';
 
 const KeyGroupContainer = styled.div<{height: number; width: number}>`
   position: absolute;
@@ -48,6 +50,7 @@ const getRGBArray = (keyColors: number[][]) => {
 export const KeyGroup: React.FC<KeyGroupProps<React.MouseEvent>> = (props) => {
   const dispatch = useAppDispatch();
   const selectedKey = useAppSelector(getSelectedKey);
+  const selectedKeys = useAppSelector(getSelectedKeys);
   const selectedTheme = useAppSelector(getSelectedTheme);
   const macroExpressions = useAppSelector(getExpressions);
   const skipFontCheck = useSkipFontCheck();
@@ -67,6 +70,8 @@ export const KeyGroup: React.FC<KeyGroupProps<React.MouseEvent>> = (props) => {
     props.onKeycapPointerDown,
     props.onKeycapPointerOver,
   ]);
+  const selecteDksmap = useAppSelector(getSelectedDksmap) || [];
+  const actuationMap = useAppSelector(getSelectedActuationMap) || [];
   const labels = useMemo(() => {
     return getLabels(props, macroExpressions, basicKeyToByte, byteToKey);
   }, [keys, props.matrixKeycodes, macros, props.definition]);
@@ -82,8 +87,11 @@ export const KeyGroup: React.FC<KeyGroupProps<React.MouseEvent>> = (props) => {
             props,
             keysKeys,
             selectedKeyIndex,
+            selectedKeys,
             labels,
             skipFontCheck,
+            selecteDksmap,
+            actuationMap,
           )}
         />
       );
@@ -91,18 +99,25 @@ export const KeyGroup: React.FC<KeyGroupProps<React.MouseEvent>> = (props) => {
   }, [
     keys,
     selectedKeyIndex,
+    selectedKeys,
     labels,
     props.pressedKeys,
     props.selectable,
     keyColorPalette,
     props.definition.vendorProductId,
     skipFontCheck,
+    props.mode,
+    selecteDksmap,
+    actuationMap,
+    props.multiSelect,
   ]);
   return (
     <KeyGroupContainer
       height={height}
       width={width}
-      style={{pointerEvents: props.selectable ? 'all' : 'none'}}
+      style={{
+        pointerEvents: props.selectable || props.multiSelect ? 'all' : 'none',
+      }}
     >
       {elems}
     </KeyGroupContainer>

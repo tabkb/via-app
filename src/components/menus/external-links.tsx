@@ -26,7 +26,7 @@ export const ExternalLinks = () => (
         <CategoryMenuTooltip>Discord</CategoryMenuTooltip>
       </CategoryIconContainer>
     </a>
-    <a href="https://github.com/the-via/app" target="_blank">
+    <a href="https://github.com/tabkb/via-app" target="_blank">
       <CategoryIconContainer>
         <FontAwesomeIcon size={'xl'} icon={faGithub} />
         <CategoryMenuTooltip>Github</CategoryMenuTooltip>
