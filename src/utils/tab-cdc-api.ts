@@ -5,7 +5,7 @@ import {isEqual} from 'lodash';
 const BAUD = 115200;
 const BUFFER_SIZE = 64;
 
-const getSerialPort = async (device: ConnectedDevice) => {
+const getSerialPort = async (device: CDCDevice) => {
   let port = await getFilteredPort(device);
   if (!port) {
     port = await navigator.serial.requestPort({
@@ -18,7 +18,7 @@ const getSerialPort = async (device: ConnectedDevice) => {
   return port;
 };
 
-const getFilteredPort = async (device: ConnectedDevice) => {
+const getFilteredPort = async (device: CDCDevice) => {
   const ports = await navigator.serial.getPorts();
   const port = ports.find((p) => {
     const info = p.getInfo();
@@ -44,10 +44,16 @@ enum APICommand {
   TAB_FIRMWARE_SET_BUFFER = 0xf1,
 }
 
-export class TabKeyboardAPI {
-  device: ConnectedDevice;
+export type CDCDevice = {
+  path: string;
+  vendorId: number;
+  productId: number;
+};
 
-  constructor(device: ConnectedDevice) {
+export class TabKeyboardAPI {
+  device: CDCDevice;
+
+  constructor(device: CDCDevice) {
     this.device = device;
   }
 

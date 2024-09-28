@@ -13,6 +13,7 @@ import actuationReducer from './actuationSlice';
 import screenReducer from './screenSlice';
 import tabkbconfigReducer from './tabkbConfigSlice';
 import firmwareReducer from './firmware';
+import bootReducer from './boot';
 import * as Sentry from '@sentry/react';
 import {errorsListenerMiddleware} from './errorsListener';
 
@@ -34,6 +35,7 @@ export const store = configureStore({
     screen: screenReducer,
     tabkbconfig: tabkbconfigReducer,
     firmware: firmwareReducer,
+    boot: bootReducer,
   },
   enhancers: [sentryEnhancer],
   middleware: (getDefaultMiddleware) =>

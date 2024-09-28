@@ -3,6 +3,7 @@ import {
   faBug,
   faGear,
   faKeyboard,
+  faSatelliteDish,
   faStethoscope,
 } from '@fortawesome/free-solid-svg-icons';
 import {ConfigurePane} from '../components/panes/configure';
@@ -11,6 +12,7 @@ import {DesignTab} from '../components/panes/design';
 import {Settings} from '../components/panes/settings';
 import {Test} from '../components/panes/test';
 import {ErrorsPaneConfig} from '../components/panes/errors';
+import {Boot} from 'src/components/panes/boot';
 
 export default [
   {
@@ -47,6 +49,13 @@ export default [
     component: Debug,
     path: '/debug',
     title: 'Debug',
+  },
+  {
+    key: 'boot',
+    icon: faSatelliteDish,
+    component: Boot,
+    path: '/boot',
+    title: '2.4G boot',
   },
   ErrorsPaneConfig,
 ];
