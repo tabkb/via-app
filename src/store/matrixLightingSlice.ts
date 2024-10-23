@@ -3,6 +3,7 @@ import type {AppThunk, RootState} from './index';
 import {createSelector, createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {getMatrixLightingAPI, getSelectedTabkbConfig} from './tabkbConfigSlice';
 import {getSelectedKeyboardAPI, selectDevice} from './devicesSlice';
+import {get256HSV} from 'src/utils/color-math';
 
 export const mlHeader = [...new TextEncoder().encode('tabml')];
 export const mlHeaderSize = 32;
@@ -201,7 +202,7 @@ export const saveToKeyboard = (): AppThunk => async (dispatch, getState) => {
   const cols = getCols(state);
   const frames = getFrames(state);
   const fps = getFps(state);
-  const data = getMatrixData(state);
+  const data = getKBMatrixData(state);
 
   dispatch(setSaving(true));
 
@@ -264,6 +265,16 @@ export const getActiveMatrix = createSelector(
     return list[idx];
   },
 );
+
+export const getKBMatrixData = createSelector(getMatrixList, (matrixList) => {
+  return matrixList.flatMap((f) =>
+    f.flatMap((r) =>
+      r.flatMap((c) => {
+        return get256HSV([c.r, c.g, c.b]);
+      }),
+    ),
+  );
+});
 
 export const getMatrixData = createSelector(getMatrixList, (matrixList) => {
   return matrixList.flatMap((f) =>

@@ -1,7 +1,7 @@
 export const pixleImg = (
   img: HTMLImageElement,
-  height: number,
   width: number,
+  height: number,
 ): Uint8Array => {
   const tempCanvas = document.createElement('canvas');
   tempCanvas.width = img.width;
@@ -23,23 +23,23 @@ export const pixleImg = (
   }) as CanvasRenderingContext2D;
   ctx.imageSmoothingEnabled = false;
 
-  let ratio = 1.0;
+  const canvasRatio = width / height;
 
-  if (img.width > img.height) {
-    ratio = width / img.width;
+  let sx, sy, sw, sh, imgRatio;
+  imgRatio = scaleW / scaleH;
+  if (imgRatio <= canvasRatio) {
+    sw = scaleW;
+    sh = sw / canvasRatio;
+    sx = 0;
+    sy = (scaleH - sh) / 2;
   } else {
-    ratio = height / img.height;
+    sh = scaleH;
+    sw = sh * canvasRatio;
+    sx = (scaleW - sw) / 2;
+    sy = 0;
   }
 
-  const x = (width - img.width * ratio) / 2;
-  const y = (height - img.height * ratio) / 2;
-  const w = img.width * ratio;
-  const h = img.height * ratio;
-
-  ctx.drawImage(tempCanvas, 0, 0, scaleW, scaleH, x, y, w, h);
-
-  tempCanvas.remove();
-  canvas.remove();
+  ctx.drawImage(tempCanvas, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
   return Uint8Array.from(
     ctx.getImageData(0, 0, width, height, {

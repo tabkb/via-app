@@ -79,7 +79,7 @@ export const getDarkenedColor = (color: string, multiplier = 0.8) => {
   return res;
 };
 
-export const get256HSV = (color: string) => {
+export const get256HSV = (color: string | number[]) => {
   const [h, s, v] = getHSV(color);
   return [
     Math.round((255 * h) / 360),
@@ -87,8 +87,10 @@ export const get256HSV = (color: string) => {
     Math.round(255 * v),
   ];
 };
-export const getHSV = (color: string) => {
-  const [rPrime, gPrime, bPrime] = getColorByte(color).map((c) => c / 255);
+export const getHSV = (color: string | number[]) => {
+  const [rPrime, gPrime, bPrime] = (
+    typeof color === 'string' ? getColorByte(color) : color
+  ).map((c) => c / 255);
   const [cmax, cmin] = [
     Math.max(rPrime, gPrime, bPrime),
     Math.min(rPrime, gPrime, bPrime),
