@@ -1,4 +1,5 @@
 import {FC} from 'react';
+import {useTranslation} from 'react-i18next';
 import {AccentSelect} from 'src/components/inputs/accent-select';
 import {getSelectedConnectedDevice} from 'src/store/devicesSlice';
 import {useAppSelector} from 'src/store/hooks';
@@ -109,6 +110,7 @@ export const ExportSelect: FC<{
   area: ScreenFileType;
   onChange: (option: any) => void;
 }> = ({area, onChange}) => {
+  const {t} = useTranslation();
   const tool = useAppSelector(getSelectedTool);
   const exportOptions = useAppSelector(getExportOptions);
   const device = useAppSelector(getSelectedConnectedDevice);
@@ -116,17 +118,21 @@ export const ExportSelect: FC<{
   if (!exportOptions) {
     return null;
   }
-  const defaultValue = exportOptions.find((opt: any) => opt.value === area);
-  if (exportOptions.length === 1) {
-    return <>{defaultValue?.label}</>;
-  }
+  const selectOptions = exportOptions.map((c) => ({
+    label: `${t(c.label)} (${c.owidth}x${c.oheight})`,
+    value: c,
+  }));
+  const defaultValue = selectOptions.find((opt: any) => opt.value === area);
+  // if (selectOptions.length === 1) {
+  //   return <>{defaultValue?.label}</>;
+  // }
   return (
     <>
       <AccentSelect
         key={venderProductId + tool}
         onChange={onChange}
         value={defaultValue}
-        options={exportOptions}
+        options={selectOptions}
       />
     </>
   );

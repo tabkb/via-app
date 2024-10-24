@@ -158,19 +158,11 @@ export const getExportOptions = createSelector(
       switch (tool) {
         case 'image':
           return types
-            .filter((c: ScreenFileType) => c.type === 'image')
-            .map((c: ScreenFileType) => ({
-              label: `${c.label} (${c.owidth}x${c.oheight})`,
-              value: c,
-            }));
+            .filter((c: ScreenFileType) => c.type === 'image');
         case 'video':
         case 'slider':
           return types
-            .filter((c: ScreenFileType) => c.type === 'video')
-            .map((c: ScreenFileType) => ({
-              label: `${c.label} (${c.owidth}x${c.oheight})`,
-              value: c,
-            }));
+            .filter((c: ScreenFileType) => c.type === 'video');
       }
     }
     return undefined;
@@ -182,7 +174,7 @@ export const getDefaultArea = createSelector(
   getExportOptions,
   (tool, options) => {
     if (options !== undefined) {
-      return options[0].value;
+      return options[0];
     }
     return undefined;
   },

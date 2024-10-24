@@ -227,7 +227,7 @@ export const reloadConnectedDevices =
   };
 
 export const loadSupportedIds = (): AppThunk => async (dispatch) => {
-  await syncStore();
+  // await syncStore();
   dispatch(updateSupportedIds(getSupportedIdsFromStore()));
   await dispatch(loadTabkbIds());
   // John you drongo, don't trust the compiler, dispatches are totes awaitable for async thunks
