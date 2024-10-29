@@ -184,6 +184,7 @@ export const SliderTool: FC<{}> = () => {
       );
       const sortedFiles = sortBy(await getScreenFiles(files), [(o) => o.name]);
       setFiles(sortedFiles);
+      setIndex(0);
     }
   };
 
@@ -221,8 +222,8 @@ export const SliderTool: FC<{}> = () => {
       kbres.FS.mkdir(inputDir);
     }
 
-    const outName = 'ANPS';
-    const format = 'ANPS';
+    const outName = area.format;
+    const format = area.format;
 
     const inputVec = new kbres.StrVec();
     for (const f of files) {

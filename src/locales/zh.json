@@ -173,5 +173,6 @@
   "Please DO NOT disconnect or switch mode during the upgrade, until the keyboard auto-reboot finishes.": "升级过程中请保持有线模式并保持数据线连接，切勿断开连接或者切换模式，直至升级完成键盘自动重启。",
   "Custom Animation": "动画",
   "Custom Image": "图片",
+  "Custom Slider": "动画",
   "Theme": "主题"
 }

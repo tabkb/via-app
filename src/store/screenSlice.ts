@@ -157,12 +157,11 @@ export const getExportOptions = createSelector(
       const types = config.fileTypes;
       switch (tool) {
         case 'image':
-          return types
-            .filter((c: ScreenFileType) => c.type === 'image');
+          return types.filter((c: ScreenFileType) => c.type === 'image');
         case 'video':
+          return types.filter((c: ScreenFileType) => c.type === 'video');
         case 'slider':
-          return types
-            .filter((c: ScreenFileType) => c.type === 'video');
+          return types.filter((c: ScreenFileType) => c.type === 'slider');
       }
     }
     return undefined;

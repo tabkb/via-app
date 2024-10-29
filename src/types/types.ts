@@ -153,8 +153,8 @@ export type ScreenTool = 'image' | 'video' | 'slider';
 
 export type ScreenFileType = {
   label: string;
-  type: 'video' | 'image';
-  format: 'ASTS' | 'ABKG' | 'ANIM' | 'ANIT';
+  type: 'video' | 'image' | 'slider';
+  format: 'ASTS' | 'ABKG' | 'ABKT' | 'ANIM' | 'ANIT' | 'ANPS' | 'ANPT';
   orientations: number;
   owidth: number;
   oheight: number;
