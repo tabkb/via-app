@@ -17,6 +17,7 @@ import {RGBColor, SketchPicker} from 'react-color';
 import {useAppDispatch, useAppSelector} from 'src/store/hooks';
 import {
   addMatrix,
+  copyMatrix,
   deleteMatrix,
   fillMatrix,
   getActiveColor,
@@ -56,6 +57,8 @@ import {
   faRotateLeft,
   faDownload,
   faFileImport,
+  faShare,
+  faCopy,
 } from '@fortawesome/free-solid-svg-icons';
 import {IconButtonTooltip} from 'src/components/inputs/tooltip';
 import {IconButtonContainer} from 'src/components/inputs/icon-button';
@@ -647,6 +650,13 @@ export const Pane: FC = () => {
               <ControlRow style={{pointerEvents: playing ? 'none' : 'auto'}}>
                 <FlexLabel>
                   <MatrixButtons>
+                    <IconButtonContainer
+                      disabled={matrixList.length >= maxFrame}
+                      onClick={() => dispatch(copyMatrix())}
+                    >
+                      <FontAwesomeIcon size={'sm'} icon={faCopy} />
+                      <IconButtonTooltip>{t('Copy')}</IconButtonTooltip>
+                    </IconButtonContainer>
                     <IconButtonContainer
                       disabled={matrixList.length >= maxFrame}
                       onClick={() => dispatch(addMatrix())}
