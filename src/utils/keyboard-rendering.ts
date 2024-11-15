@@ -22,6 +22,8 @@ import {
   isArrowKey,
   isMacroKeycodeByte,
   getMacroKeycodeIndex,
+  isTapDanceByte,
+  getTapDanceIndex,
 } from './key';
 
 export const CSSVarObject = {
@@ -455,6 +457,7 @@ export const getLabel = (
   selectedDefinition: VIADefinitionV2 | VIADefinitionV3 | null,
   basicKeyToByte: Record<string, number>,
   byteToKey: Record<number, string>,
+  tapDanceKeycodes: IKeycode[],
 ) => {
   let label: string = '';
   let size: number = 1.0;
@@ -475,6 +478,17 @@ export const getLabel = (
     );
     tooltipLabel = getShortNameForKeycode(
       selectedDefinition.customKeycodes[customKeycodeIdx] as IKeycode,
+      700,
+    );
+  } else if (
+    isTapDanceByte(keycodeByte, basicKeyToByte) &&
+    tapDanceKeycodes[getTapDanceIndex(keycodeByte, basicKeyToByte)] !==
+      undefined
+  ) {
+    const tapDanceIdx = getTapDanceIndex(keycodeByte, basicKeyToByte);
+    label = getShortNameForKeycode(tapDanceKeycodes[tapDanceIdx] as IKeycode);
+    tooltipLabel = getShortNameForKeycode(
+      tapDanceKeycodes[tapDanceIdx] as IKeycode,
       700,
     );
   } else if (keycodeByte) {

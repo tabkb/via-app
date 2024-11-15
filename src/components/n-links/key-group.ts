@@ -8,7 +8,7 @@ import {
   KeysKeys,
 } from 'src/types/keyboard-rendering';
 import {ActuationData, DKSData} from 'src/types/types';
-import {getByteToKey} from 'src/utils/key';
+import {getByteToKey, IKeycode} from 'src/utils/key';
 import {getBasicKeyDict} from 'src/utils/key-to-byte/dictionary-store';
 import {
   calculatePointPosition,
@@ -81,6 +81,7 @@ export function getLabels<T>(
   macroExpressions: string[],
   basicKeyToByte: ReturnType<typeof getBasicKeyDict>,
   byteToKey: ReturnType<typeof getByteToKey>,
+  tapDanceKeycodes: IKeycode[],
 ) {
   return !props.matrixKeycodes.length
     ? []
@@ -92,6 +93,7 @@ export function getLabels<T>(
           props.definition,
           basicKeyToByte,
           byteToKey,
+          tapDanceKeycodes,
         ),
       );
 }

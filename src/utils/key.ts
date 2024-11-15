@@ -144,6 +144,12 @@ function getByteForLayerCode(
           basicKeyToByte._QK_MACRO_MAX,
         );
       }
+      case 'TD': {
+        return Math.min(
+          basicKeyToByte._QK_TAP_DANCE + numLayer,
+          basicKeyToByte._QK_TAP_DANCE_MAX,
+        );
+      }
       default: {
         throw new Error('Incorrect code');
       }
@@ -287,6 +293,23 @@ export function getCustomKeycodeIndex(
   basicKeyToByte: Record<string, number>,
 ) {
   return byte - basicKeyToByte._QK_KB;
+}
+
+export function isTapDanceByte(
+  byte: number,
+  basicKeyToByte: Record<string, number>,
+) {
+  return (
+    byte >= basicKeyToByte._QK_TAP_DANCE &&
+    byte <= basicKeyToByte._QK_TAP_DANCE_MAX
+  );
+}
+
+export function getTapDanceIndex(
+  byte: number,
+  basicKeyToByte: Record<string, number>,
+) {
+  return byte - basicKeyToByte._QK_TAP_DANCE;
 }
 
 export function isMacroKeycodeByte(

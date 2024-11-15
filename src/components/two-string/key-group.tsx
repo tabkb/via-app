@@ -23,6 +23,7 @@ import {Color} from 'three';
 import {useSkipFontCheck} from 'src/utils/use-skip-font-check';
 import {getSelectedDksmap} from 'src/store/actuationSlice';
 import {getSelectedActuationMap} from 'src/store/actuationSlice';
+import {getTapDanceKeycodes} from 'src/store/tabkbConfigSlice';
 
 const KeyGroupContainer = styled.div<{height: number; width: number}>`
   position: absolute;
@@ -72,9 +73,16 @@ export const KeyGroup: React.FC<KeyGroupProps<React.MouseEvent>> = (props) => {
   ]);
   const selecteDksmap = useAppSelector(getSelectedDksmap) || [];
   const actuationMap = useAppSelector(getSelectedActuationMap) || [];
+  const tapDanceKeycodes = useAppSelector(getTapDanceKeycodes);
   const labels = useMemo(() => {
-    return getLabels(props, macroExpressions, basicKeyToByte, byteToKey);
-  }, [keys, props.matrixKeycodes, macros, props.definition]);
+    return getLabels(
+      props,
+      macroExpressions,
+      basicKeyToByte,
+      byteToKey,
+      tapDanceKeycodes,
+    );
+  }, [keys, props.matrixKeycodes, macros, props.definition, tapDanceKeycodes]);
   const {width, height} = calculateKeyboardFrameDimensions(keys);
   const elems = useMemo(() => {
     return props.keys.map((k, i) => {

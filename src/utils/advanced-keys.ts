@@ -25,6 +25,8 @@ const quantumRangesKeys = [
   '_QK_KB_MAX',
   '_QK_MACRO',
   '_QK_MACRO_MAX',
+  '_QK_TAP_DANCE',
+  '_QK_TAP_DANCE_MAX',
 ];
 
 const quantumRanges = (
@@ -77,6 +79,7 @@ const topLevelMacroToValue = {
   TT: '_QK_LAYER_TAP_TOGGLE', // TT(layer)
   CUSTOM: '_QK_KB', // CUSTOM(n)
   MACRO: '_QK_MACRO', // MACRO(n)
+  TD: '_QK_TAP_DANCE', // TD(n)
 };
 
 const modifierKeyToValue = {
@@ -202,6 +205,7 @@ export const advancedKeycodeToString = (
   switch (lastRange) {
     case '_QK_KB':
     case '_QK_MACRO':
+    case '_QK_TAP_DANCE':
       humanReadable += inputKeycode - lastValue + ')';
       break;
     case '_QK_MOMENTARY':
@@ -355,6 +359,15 @@ const parseTopLevelMacro = (
     case 'MACRO': {
       const n = Number.parseInt(parameter);
       const nMax = basicKeyToByte._QK_MACRO_MAX - basicKeyToByte._QK_MACRO;
+      if (n >= 0 && n <= nMax) {
+        return basicKeyToByte[topLevelMacroToValue[topLevelKey]] + n;
+      }
+      return 0;
+    }
+    case 'TD': {
+      const n = Number.parseInt(parameter);
+      const nMax =
+        basicKeyToByte._QK_TAP_DANCE_MAX - basicKeyToByte._QK_TAP_DANCE;
       if (n >= 0 && n <= nMax) {
         return basicKeyToByte[topLevelMacroToValue[topLevelKey]] + n;
       }

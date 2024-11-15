@@ -43,6 +43,7 @@ import {
 } from 'src/store/settingsSlice';
 import {getNextKey} from 'src/utils/keyboard-rendering';
 import {useTranslation} from 'react-i18next';
+import {getTapDanceKeycodes} from 'src/store/tabkbConfigSlice';
 const KeycodeList = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, 64px);
@@ -153,6 +154,7 @@ export const KeycodePane: FC = () => {
   const selectedKeyDefinitions = useAppSelector(getSelectedKeyDefinitions);
   const {basicKeyToByte} = useAppSelector(getBasicKeyToByte);
   const macroCount = useAppSelector(getMacroCount);
+  const tapDanceKeycodes = useAppSelector(getTapDanceKeycodes);
 
   const KeycodeCategories = useMemo(
     () => generateKeycodeCategories(basicKeyToByte, macroCount),
@@ -331,17 +333,27 @@ export const KeycodePane: FC = () => {
         if (
           (!isVIADefinitionV2(selectedDefinition) &&
             !isVIADefinitionV3(selectedDefinition)) ||
-          !selectedDefinition.customKeycodes
+          (!selectedDefinition.customKeycodes && tapDanceKeycodes.length == 0)
         ) {
           return null;
         }
         return (
           <KeycodeList>
-            {selectedDefinition.customKeycodes.map((keycode, idx) => {
+            {selectedDefinition.customKeycodes &&
+              selectedDefinition.customKeycodes.map((keycode, idx) => {
+                return renderKeycode(
+                  {
+                    ...keycode,
+                    code: `CUSTOM(${idx})`,
+                  },
+                  idx,
+                );
+              })}
+            {tapDanceKeycodes.map((keycode, idx) => {
               return renderKeycode(
                 {
                   ...keycode,
-                  code: `CUSTOM(${idx})`,
+                  code: `TD(${idx})`,
                 },
                 idx,
               );

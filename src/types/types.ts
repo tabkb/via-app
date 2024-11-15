@@ -6,6 +6,7 @@ import type {
   VIAMenu,
 } from '@the-via/reader';
 import {TestKeyboardSoundsMode} from 'src/components/void/test-keyboard-sounds';
+import {IKeycode} from 'src/utils/key';
 
 export enum TestKeyState {
   Initial,
@@ -184,6 +185,7 @@ export type TabkbConfig = {
   screen: ScreenConfig;
   actuation: boolean;
   matrixLighting: MatrixLightingConfig;
+  tapDance: IKeycode[];
 };
 
 export interface TabFileAPI {

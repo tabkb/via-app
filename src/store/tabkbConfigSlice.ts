@@ -9,6 +9,7 @@ import {
 } from './devicesSlice';
 import {KeyboardAPI} from 'src/utils/keyboard-api';
 import {TabKeyboardAPI} from 'src/utils/tab-cdc-api';
+import {IKeycode} from 'src/utils/key';
 
 type tabkbConfigState = {
   configs: {[vendorProductId: number]: TabkbConfig};
@@ -90,5 +91,15 @@ export const getMatrixLightingAPI = createSelector(
       return api;
     }
     return new TabKeyboardAPI(device);
+  },
+);
+
+export const getTapDanceKeycodes = createSelector(
+  getSelectedTabkbConfig,
+  (config): IKeycode[] => {
+    if (!config || !config.tapDance) {
+      return [];
+    }
+    return config.tapDance;
   },
 );
