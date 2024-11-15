@@ -174,6 +174,7 @@ export type MatrixLightingConfig = {
   cdc: boolean;
   importEnable: boolean;
   maxFrame: number;
+  shareApi: string;
 };
 
 export type TabkbConfig = {
@@ -186,6 +187,7 @@ export type TabkbConfig = {
   actuation: boolean;
   matrixLighting: MatrixLightingConfig;
   tapDance: IKeycode[];
+  g24boot: boolean;
 };
 
 export interface TabFileAPI {

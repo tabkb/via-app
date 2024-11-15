@@ -68,7 +68,8 @@ import {useKbres} from 'src/utils/use-kbres';
 import {AccentButton} from 'src/components/inputs/accent-button';
 import {useTranslation} from 'react-i18next';
 import {isEqual} from 'lodash';
-import {ErrorMessage} from 'src/components/styled';
+import {ErrorMessage, SuccessMessage} from 'src/components/styled';
+import {getSelectedTabkbConfig} from 'src/store/tabkbConfigSlice';
 
 const title = 'Matrix Lighting';
 
@@ -400,10 +401,14 @@ export const Pane: FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [playing, setPlaying] = useState(false);
   const importEnable = useAppSelector(getImportEnable);
   const maxFrame = useAppSelector(getMaxFrame);
+
+  const shareApi = useAppSelector(getSelectedTabkbConfig)?.matrixLighting
+    ?.shareApi;
 
   const fpsOptions = useMemo(
     () =>
@@ -577,6 +582,59 @@ export const Pane: FC = () => {
     } catch (err) {
       console.log(err);
     }
+  };
+
+  const [sharing, setSharing] = useState(false);
+
+  const share = () => {
+    if (sharing || !shareApi) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    let fd = new FormData();
+    fd.append('file', new Blob([Uint8Array.from(fileContent)]));
+
+    setErrorMessage(null);
+    setSharing(true);
+
+    fetch(shareApi, {
+      method: 'POST',
+      body: fd,
+      signal: signal,
+    })
+      .then((resp) => {
+        if (resp.status !== 200) {
+          console.log(resp.status);
+          setErrorMessage(t('Sharing failed'));
+          return;
+        }
+        resp.json().then((data) => {
+          if (data.error) {
+            console.log(data.error);
+            setErrorMessage(t('Sharing failed'));
+          } else {
+            setSuccessMessage(t('Sharing success'));
+          }
+          setTimeout(() => {
+            setSuccessMessage(null);
+          }, 3000);
+        });
+      })
+      .catch((e) => {
+        console.log(e);
+        setErrorMessage(t('Sharing failed'));
+      })
+      .finally(() => {
+        setSharing(false);
+      });
+
+    setTimeout(() => {
+      controller.abort();
+      setSharing(false);
+    }, 60 * 1000);
   };
 
   useEffect(() => {
@@ -754,6 +812,12 @@ export const Pane: FC = () => {
                         {t('Download File')}
                       </IconButtonTooltip>
                     </IconButtonContainer>
+                    {shareApi && (
+                      <IconButtonContainer onClick={share}>
+                        <FontAwesomeIcon size={'sm'} icon={faShare} />
+                        <IconButtonTooltip>{t('Share')}</IconButtonTooltip>
+                      </IconButtonContainer>
+                    )}
                   </MatrixButtons>
                 </FlexLabel>
                 <Detail>
@@ -766,6 +830,11 @@ export const Pane: FC = () => {
                 <ErrorMessage onClick={() => setErrorMessage(null)}>
                   {errorMessage}
                 </ErrorMessage>
+              ) : null}
+              {successMessage ? (
+                <SuccessMessage onClick={() => setSuccessMessage(null)}>
+                  {successMessage}
+                </SuccessMessage>
               ) : null}
             </MatrixControlRows>
           </MatrixConfigure>

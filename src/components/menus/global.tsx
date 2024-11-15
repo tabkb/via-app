@@ -11,6 +11,7 @@ import {ErrorLink, ErrorsPaneConfig} from '../panes/errors';
 import {ExternalLinks} from './external-links';
 import {useTranslation} from 'react-i18next';
 import {LanguageSelect} from './language-select';
+import { getSelectedTabkbConfig } from 'src/store/tabkbConfigSlice';
 
 const Container = styled.div`
   width: 100vw;
@@ -33,12 +34,14 @@ const GlobalContainer = styled(Container)`
 export const UnconnectedGlobalMenu = () => {
   const {t, i18n} = useTranslation();
   const showDesignTab = useAppSelector(getShowDesignTab);
+  const showBoot = useAppSelector(getSelectedTabkbConfig)?.g24boot
 
   const [location] = useLocation();
 
   const Panes = useMemo(() => {
     return PANES.filter((pane) => pane.key !== ErrorsPaneConfig.key).map(
       (pane) => {
+        if (pane.key === 'boot' && !showBoot) return null;
         if (pane.key === 'design' && !showDesignTab) return null;
         if (pane.key === 'debug' && !showDebugPane) return null;
         return (
@@ -51,7 +54,7 @@ export const UnconnectedGlobalMenu = () => {
         );
       },
     );
-  }, [location, showDesignTab, i18n.language]);
+  }, [location, showDesignTab, i18n.language, showBoot]);
 
   return (
     <React.Fragment>

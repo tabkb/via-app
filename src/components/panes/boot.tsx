@@ -118,10 +118,3 @@ export const Boot: FC = () => {
     </Pane>
   );
 };
-
-function dispatch(arg0: {
-  payload: 'waiting' | 'saving' | 'completed' | 'failed' | 'canceled';
-  type: 'boot/updateState';
-}) {
-  throw new Error('Function not implemented.');
-}
